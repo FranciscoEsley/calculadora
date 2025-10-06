@@ -13,7 +13,7 @@
     .container {
       background: #fff;
       padding: 20px;
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
       border-radius: 12px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -27,15 +27,14 @@
       font-weight: bold;
     }
     input {
-      width: 95%;
+      width: 100%;
       padding: 8px;
       margin-top: 5px;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
     button {
-      margin-top: 20px;
-      width: 100%;
+      margin-top: 15px;
       padding: 10px;
       background: #4CAF50;
       color: #fff;
@@ -47,28 +46,57 @@
     button:hover {
       background: #45a049;
     }
+    .add-btn {
+      background: #007BFF;
+    }
+    .add-btn:hover {
+      background: #0069d9;
+    }
     .resultado {
       margin-top: 20px;
       background: #e9f5ee;
       padding: 15px;
       border-radius: 8px;
     }
+    .gasto-fixo {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .gasto-fixo input {
+      flex: 1;
+    }
+    .remove-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 6px 10px;
+    }
+    .remove-btn:hover {
+      background: #c0392b;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Calculadora Financeira</h2>
+
     <label for="receita">Receita Mensal (R$):</label>
-    <input type="number" id="receita">
+    <input type="number" id="receita" placeholder="Ex: 1518">
 
     <label for="dizimo">Dízimo (%):</label>
-    <input type="number" id="dizimo">
+    <input type="number" id="dizimo" placeholder="Ex: 10">
 
     <label for="reserva">Reserva Investimento (%):</label>
-    <input type="number" id="reserva">
+    <input type="number" id="reserva" placeholder="Ex: 20">
 
-    <label for="fixos">Gastos Fixos (R$):</label>
-    <input type="number" id="fixos">
+    <label>Gastos Fixos:</label>
+    <div id="gastosFixos"></div>
+    <button type="button" class="add-btn" onclick="adicionarGasto()">+ Adicionar gasto fixo</button>
+
+    <p id="totalFixos" style="margin-top:10px;font-weight:bold;">Total de gastos fixos: R$ 0,00</p>
 
     <button onclick="calcular()">Calcular</button>
 
@@ -76,15 +104,49 @@
   </div>
 
   <script>
+    const gastosFixosDiv = document.getElementById('gastosFixos');
+    const totalFixosTexto = document.getElementById('totalFixos');
+
+    function adicionarGasto() {
+      const div = document.createElement('div');
+      div.classList.add('gasto-fixo');
+      div.innerHTML = `
+        <input type="number" class="valorGasto" placeholder="Valor (R$)" oninput="atualizarTotal()">
+        <button type="button" class="remove-btn" onclick="removerGasto(this)">X</button>
+      `;
+      gastosFixosDiv.appendChild(div);
+      atualizarTotal();
+    }
+
+    function removerGasto(botao) {
+      botao.parentElement.remove();
+      atualizarTotal();
+    }
+
+    function atualizarTotal() {
+      const valores = document.querySelectorAll('.valorGasto');
+      let total = 0;
+      valores.forEach(input => {
+        total += parseFloat(input.value) || 0;
+      });
+      totalFixosTexto.textContent = `Total de gastos fixos: R$ ${total.toFixed(2)}`;
+    }
+
     function calcular() {
       const receita = parseFloat(document.getElementById('receita').value) || 0;
       const dizimoPerc = parseFloat(document.getElementById('dizimo').value) || 0;
       const reservaPerc = parseFloat(document.getElementById('reserva').value) || 0;
-      const fixos = parseFloat(document.getElementById('fixos').value) || 0;
+
+      // Soma automática dos gastos fixos
+      const valores = document.querySelectorAll('.valorGasto');
+      let totalFixos = 0;
+      valores.forEach(input => {
+        totalFixos += parseFloat(input.value) || 0;
+      });
 
       const dizimo = receita * (dizimoPerc / 100);
       const reservaInv = receita * (reservaPerc / 100);
-      const sobra = receita - dizimo - reservaInv - fixos;
+      const sobra = receita - dizimo - reservaInv - totalFixos;
       const emergencia = sobra / 2;
       const livre = sobra / 2;
 
@@ -93,7 +155,7 @@
         <p><strong>Receita:</strong> R$ ${receita.toFixed(2)}</p>
         <p><strong>Dízimo (${dizimoPerc}%):</strong> R$ ${dizimo.toFixed(2)}</p>
         <p><strong>Reserva Investimentos (${reservaPerc}%):</strong> R$ ${reservaInv.toFixed(2)}</p>
-        <p><strong>Gastos Fixos:</strong> R$ ${fixos.toFixed(2)}</p>
+        <p><strong>Total de Gastos Fixos:</strong> R$ ${totalFixos.toFixed(2)}</p>
         <p><strong>Sobra Líquida:</strong> R$ ${sobra.toFixed(2)}</p>
         <p>➡ <strong>Reserva Emergência (50%):</strong> R$ ${emergencia.toFixed(2)}</p>
         <p>➡ <strong>Uso Livre (50%):</strong> R$ ${livre.toFixed(2)}</p>
