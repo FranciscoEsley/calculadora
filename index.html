@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Planejamento Financeiro</title>
+
+  <style>
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+      font-family:Arial,sans-serif;
+    }
+
+    body{
+      background:#111827;
+      color:#f3f4f6;
+
+      min-height:100vh;
+
+      display:flex;
+      justify-content:center;
+      align-items:center;
+
+      padding:30px;
+    }
+
+    .app{
+      width:100%;
+      max-width:1200px;
+    }
+
+    h1{
+      margin-bottom:20px;
+      font-size:32px;
+      text-align:center;
+    }
+
+    .container{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:20px;
+    }
+
+    .card{
+      background:#1f2937;
+      padding:20px;
+      border-radius:16px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.25);
+    }
+
+    .card h2{
+      margin-bottom:16px;
+    }
+
+    label{
+      display:block;
+      margin-top:14px;
+      margin-bottom:6px;
+      color:#d1d5db;
+      font-size:14px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#374151;
+      color:white;
+      font-size:15px;
+      outline:none;
+    }
+
+    input:focus{
+      outline:2px solid #2563eb;
+    }
+
+    input[type="checkbox"]{
+      width:auto;
+      margin-right:8px;
+    }
+
+    button{
+      margin-top:15px;
+      padding:12px 16px;
+      border:none;
+      border-radius:10px;
+      background:#2563eb;
+      color:white;
+      cursor:pointer;
+      font-size:15px;
+      transition:0.2s;
+    }
+
+    button:hover{
+      background:#1d4ed8;
+    }
+
+    .despesa{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+      align-items:center;
+    }
+
+    .remover{
+      background:#dc2626;
+      margin-top:0;
+      padding:10px 14px;
+    }
+
+    .remover:hover{
+      background:#b91c1c;
+    }
+
+    .resultado{
+      line-height:1.8;
+    }
+
+    .valor{
+      color:#34d399;
+      font-weight:bold;
+    }
+
+    .negativo{
+      color:#ef4444;
+      font-weight:bold;
+    }
+
+    .barra{
+      width:100%;
+      height:24px;
+      background:#374151;
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:12px;
+    }
+
+    .progresso{
+      height:100%;
+      width:0%;
+      background:#10b981;
+      transition:0.3s;
+    }
+
+    .small{
+      margin-top:10px;
+      color:#9ca3af;
+      font-size:14px;
+    }
+
+    hr{
+      margin:14px 0;
+      border-color:#374151;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="app">
+
+    <h1>Planejamento Financeiro</h1>
+
+    <div class="container">
+
+      <div class="card">
+
+        <h2>Renda</h2>
+
+        <label>Renda mensal</label>
+
+        <input
+          type="number"
+          id="renda"
+          placeholder="Ex: 1400"
+        >
+
+        <label>Dízimo (%)</label>
+
+        <input
+          type="number"
+          id="dizimo"
+          placeholder="Ex: 10"
+        >
+
+        <label>Investimento (%)</label>
+
+        <input
+          type="number"
+          id="investimento"
+          placeholder="Ex: 20"
+        >
+
+        <label
+          style="
+            margin-top:18px;
+            display:flex;
+            align-items:center;
+          "
+        >
+
+          <input
+            type="checkbox"
+            id="semInvestimento"
+          >
+
+          Não calcular investimento
+
+        </label>
+
+      </div>
+
+      <div class="card">
+
+        <h2>Despesas</h2>
+
+        <div id="despesas"></div>
+
+        <button onclick="adicionarDespesa()">
+          + Adicionar despesa
+        </button>
+
+      </div>
+
+      <div class="card">
+
+        <h2>Reserva de Emergência</h2>
+
+        <label>Meta da reserva</label>
+
+        <input
+          type="number"
+          id="metaReserva"
+          placeholder="Ex: 4863"
+        >
+
+        <label>Valor já guardado</label>
+
+        <input
+          type="number"
+          id="reservaAtual"
+          placeholder="Ex: 500"
+        >
+
+        <div class="barra">
+          <div class="progresso" id="barra"></div>
+        </div>
+
+        <div class="small" id="textoBarra">
+          0% da meta concluída
+        </div>
+
+      </div>
+
+      <div class="card">
+
+        <h2>Resultado</h2>
+
+        <div class="resultado" id="resultado">
+
+          Preencha os campos para calcular.
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+
+    const despesasContainer =
+      document.getElementById("despesas");
+
+    function adicionarDespesa(){
+
+      const ultima =
+        document.querySelector(
+          ".valor-despesa:last-of-type"
+        );
+
+      if(ultima && ultima.value === ""){
+        return;
+      }
+
+      const div =
+        document.createElement("div");
+
+      div.className = "despesa";
+
+      div.innerHTML = `
+
+        <input
+          type="number"
+          class="valor-despesa"
+          placeholder="Valor da despesa"
+        >
+
+        <button
+          class="remover"
+          onclick="removerDespesa(this)"
+        >
+          X
+        </button>
+
+      `;
+
+      despesasContainer.appendChild(div);
+
+    }
+
+    function removerDespesa(botao){
+
+      botao.parentElement.remove();
+
+      atualizar();
+
+    }
+
+    document.addEventListener(
+      "input",
+      atualizar
+    );
+
+    document
+      .getElementById("semInvestimento")
+      .addEventListener(
+        "change",
+        atualizar
+      );
+
+    function dinheiro(valor){
+
+      return valor.toLocaleString(
+        "pt-BR",
+        {
+          style:"currency",
+          currency:"BRL"
+        }
+      );
+
+    }
+
+    function atualizar(){
+
+      const renda =
+        Number(
+          document.getElementById(
+            "renda"
+          ).value
+        ) || 0;
+
+      const dizimoPercent =
+        Number(
+          document.getElementById(
+            "dizimo"
+          ).value
+        ) || 0;
+
+      const investimentoPercent =
+        Number(
+          document.getElementById(
+            "investimento"
+          ).value
+        ) || 0;
+
+      const semInvestimento =
+        document.getElementById(
+          "semInvestimento"
+        ).checked;
+
+      const dizimo =
+        renda * (dizimoPercent / 100);
+
+      const investimento =
+        semInvestimento
+        ? 0
+        : renda * (investimentoPercent / 100);
+
+      let totalDespesas = 0;
+
+      const despesas =
+        document.querySelectorAll(
+          ".despesa"
+        );
+
+      despesas.forEach(item => {
+
+        const valor =
+          Number(
+            item.querySelector(
+              ".valor-despesa"
+            ).value
+          ) || 0;
+
+        totalDespesas += valor;
+
+      });
+
+      const saldo =
+        renda - dizimo - investimento;
+
+      const saldoFinal =
+        saldo - totalDespesas;
+
+      const totalReserva =
+        Math.max(saldoFinal,0);
+
+      const reserva80 =
+        totalReserva * 0.8;
+
+      const uso20 =
+        totalReserva * 0.2;
+
+      const reserva70 =
+        totalReserva * 0.7;
+
+      const uso30 =
+        totalReserva * 0.3;
+
+      const reforco30 =
+        Math.max(
+          saldoFinal * 0.3,
+          0
+        );
+
+      const usoLivre70 =
+        Math.max(
+          saldoFinal * 0.7,
+          0
+        );
+
+      document.getElementById(
+        "resultado"
+      ).innerHTML = `
+
+        <p>
+          Dízimo:
+          <span class="valor">
+            ${dinheiro(dizimo)}
+          </span>
+        </p>
+
+        <p>
+          ${
+            semInvestimento
+            ? "Sem investimento:"
+            : "Investimento:"
+          }
+
+          <span class="valor">
+            ${dinheiro(investimento)}
+          </span>
+        </p>
+
+        <p>
+          Despesas:
+          <span class="negativo">
+            ${dinheiro(totalDespesas)}
+          </span>
+        </p>
+
+        <hr>
+
+        <p>
+          Saldo após percentuais:
+          <span class="valor">
+            ${dinheiro(saldo)}
+          </span>
+        </p>
+
+        <p>
+          Saldo final:
+          <span class="${
+            saldoFinal < 0
+            ? "negativo"
+            : "valor"
+          }">
+            ${dinheiro(saldoFinal)}
+          </span>
+        </p>
+
+        <hr>
+
+        ${
+          semInvestimento
+          ?
+          `
+            <p
+              style="
+                margin-bottom:8px;
+                color:#9ca3af;
+              "
+            >
+              Modo sem investimento:
+            </p>
+
+            <p>
+              Reserva 70%:
+              <span class="valor">
+                ${dinheiro(reserva70)}
+              </span>
+            </p>
+
+            <p>
+              Uso variável 30%:
+              <span class="valor">
+                ${dinheiro(uso30)}
+              </span>
+            </p>
+          `
+          :
+          `
+            <p>
+              Reserva 80%:
+              <span class="valor">
+                ${dinheiro(reserva80)}
+              </span>
+            </p>
+
+            <p>
+              Uso variável 20%:
+              <span class="valor">
+                ${dinheiro(uso20)}
+              </span>
+            </p>
+
+            <hr>
+
+            <p
+              style="
+                margin-bottom:8px;
+                color:#9ca3af;
+              "
+            >
+              Depois de terminar a reserva:
+            </p>
+
+            <p>
+              Reforço reserva 30%:
+              <span class="valor">
+                ${dinheiro(reforco30)}
+              </span>
+            </p>
+
+            <p>
+              Uso livre 70%:
+              <span class="valor">
+                ${dinheiro(usoLivre70)}
+              </span>
+            </p>
+          `
+        }
+
+      `;
+
+      atualizarBarra();
+
+    }
+
+    function atualizarBarra(){
+
+      const meta =
+        Number(
+          document.getElementById(
+            "metaReserva"
+          ).value
+        ) || 0;
+
+      const atual =
+        Number(
+          document.getElementById(
+            "reservaAtual"
+          ).value
+        ) || 0;
+
+      let porcentagem = 0;
+
+      if(meta > 0){
+
+        porcentagem =
+          Math.min(
+            (atual / meta) * 100,
+            100
+          );
+
+      }
+
+      document.getElementById(
+        "barra"
+      ).style.width =
+        porcentagem + "%";
+
+      document.getElementById(
+        "textoBarra"
+      ).innerText =
+        porcentagem.toFixed(1) +
+        "% da meta concluída";
+
+    }
+
+    adicionarDespesa();
+
+  </script>
+
+</body>
+</html>
